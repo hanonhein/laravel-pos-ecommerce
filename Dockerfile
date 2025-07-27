@@ -27,17 +27,27 @@ WORKDIR /app
 # Copy composer files
 COPY composer.json composer.lock ./
 
+# Copy .env.example to .env for build process
+COPY .env.example .env
+
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Copy the rest of the application
 COPY . .
 
+# Generate application key
+RUN php artisan key:generate --no-interaction
+
 # Install Node dependencies and build assets
 RUN npm ci && npm run build
 
 # Set permissions
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
+RUN chmod -R 775 /app/storage /app/bootstrap/cache
+
+# Create storage symbolic link
+RUN php artisan storage:link --force
 
 # Expose port
 EXPOSE 8000
