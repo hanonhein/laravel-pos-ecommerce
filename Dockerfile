@@ -24,17 +24,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /app
 
-# Copy composer files
-COPY composer.json composer.lock ./
+# Copy the entire application first
+COPY . .
 
 # Copy .env.example to .env for build process
-COPY .env.example .env
+RUN cp .env.example .env
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install PHP dependencies with no scripts to avoid artisan issues
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-# Copy the rest of the application
-COPY . .
+# Now run the post-autoload scripts manually
+RUN composer run-script post-autoload-dump
 
 # Generate application key
 RUN php artisan key:generate --no-interaction
